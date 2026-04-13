@@ -51,9 +51,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.schednd.domain.model.AttendanceTier
 import com.schednd.ui.components.AvailabilityGrid
 import com.schednd.ui.components.CalendarGrid
-import com.schednd.ui.detail.AttendanceTier
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 

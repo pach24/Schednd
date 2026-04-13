@@ -31,8 +31,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.schednd.domain.model.AttendanceTier
+import com.schednd.domain.model.computeAttendanceTier
 import com.schednd.model.Participant
-import com.schednd.ui.detail.AttendanceTier
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -56,16 +57,6 @@ private fun tierIcon(tier: AttendanceTier): ImageVector = when (tier) {
     AttendanceTier.INSUFFICIENT -> Icons.Filled.Cancel
 }
 
-private fun attendanceTier(count: Int, total: Int): AttendanceTier {
-    if (total == 0) return AttendanceTier.INSUFFICIENT
-    val pct = count.toDouble() / total
-    return when {
-        pct >= 0.86 -> AttendanceTier.FULL
-        pct >= 0.71 -> AttendanceTier.VIABLE
-        pct >= 0.57 -> AttendanceTier.LIMITED
-        else -> AttendanceTier.INSUFFICIENT
-    }
-}
 
 @Composable
 fun AvailabilityGrid(
@@ -91,7 +82,7 @@ fun AvailabilityGrid(
                 val count = participants.count { p ->
                     date in (participantAvailability[p.userId] ?: emptySet())
                 }
-                val tier = attendanceTier(count, total)
+                val tier = computeAttendanceTier(count, total)
                 val color = tierColor(tier)
                 val icon = tierIcon(tier)
 
@@ -146,7 +137,7 @@ fun AvailabilityGrid(
                     val count = participants.count { p ->
                         date in (participantAvailability[p.userId] ?: emptySet())
                     }
-                    val tier = attendanceTier(count, total)
+                    val tier = computeAttendanceTier(count, total)
                     val borderColor = tierColor(tier)
 
                     Box(
@@ -190,7 +181,7 @@ fun AvailabilityGrid(
                 val count = participants.count { p ->
                     (participantAvailability[p.userId] ?: emptySet()).contains(date)
                 }
-                val tier = attendanceTier(count, total)
+                val tier = computeAttendanceTier(count, total)
                 val color = tierColor(tier)
                 Box(
                     modifier = Modifier

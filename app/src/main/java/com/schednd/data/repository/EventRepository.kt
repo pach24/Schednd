@@ -2,7 +2,7 @@ package com.schednd.data.repository
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
-import com.schednd.data.util.ShortCodeGenerator
+import com.schednd.domain.util.EventCodeGenerator
 import com.schednd.model.Event
 import com.schednd.model.Participant
 import kotlinx.coroutines.channels.awaitClose
@@ -24,7 +24,7 @@ class EventRepository @Inject constructor(
     suspend fun createEvent(name: String, creatorId: String): String {
         var code: String
         do {
-            code = ShortCodeGenerator.generate()
+            code = EventCodeGenerator.generate()
             val exists = doesEventExist(code)
         } while (exists)
 

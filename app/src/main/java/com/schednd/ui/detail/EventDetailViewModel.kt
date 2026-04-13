@@ -7,6 +7,9 @@ import com.google.firebase.Timestamp
 import com.schednd.data.repository.AuthRepository
 import com.schednd.data.repository.EventRepository
 import com.schednd.data.repository.RecentEventsRepository
+import com.schednd.domain.model.AttendanceTier
+import com.schednd.domain.model.DateSummary
+import com.schednd.domain.usecase.ComputeDateSummariesUseCase
 import com.schednd.model.Event
 import com.schednd.model.Participant
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -20,15 +23,6 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import javax.inject.Inject
 
-enum class AttendanceTier { FULL, VIABLE, LIMITED, INSUFFICIENT }
-
-data class DateSummary(
-    val date: LocalDate,
-    val count: Int,
-    val total: Int,
-    val absentNames: List<String>,
-    val tier: AttendanceTier
-)
 
 data class EventDetailUiState(
     val event: Event? = null,
@@ -51,7 +45,8 @@ class EventDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val eventRepository: EventRepository,
     private val authRepository: AuthRepository,
-    private val recentEventsRepository: RecentEventsRepository
+    private val recentEventsRepository: RecentEventsRepository,
+    private val computeDateSummaries: ComputeDateSummariesUseCase
 ) : ViewModel() {
 
     private val code: String = savedStateHandle.get<String>("code")!!
@@ -78,6 +73,7 @@ class EventDetailViewModel @Inject constructor(
                                 .distinct()
                                 .sorted()
                             val dateSummaries = computeDateSummaries(datesLocal, participants, availability)
+
                             val isCreator = event.creatorId == authRepository.getCurrentUserId()
                             val myParticipant = participants.find { it.userId == myUserId }
                             val mySavedDates = myParticipant?.availableDates
@@ -153,31 +149,6 @@ class EventDetailViewModel @Inject constructor(
                 _uiState.update { it.copy(error = e.message) }
             }
         }
-    }
-
-    private fun computeDateSummaries(
-        dates: List<LocalDate>,
-        participants: List<Participant>,
-        availability: Map<String, Set<LocalDate>>
-    ): List<DateSummary> {
-        if (participants.isEmpty()) return emptyList()
-        val total = participants.size
-
-        return dates.map { date ->
-            val attending = participants.filter { p -> date in (availability[p.userId] ?: emptySet()) }
-            val count = attending.size
-            val absentNames = participants
-                .filter { p -> date !in (availability[p.userId] ?: emptySet()) }
-                .map { it.name }
-            val pct = count.toDouble() / total
-            val tier = when {
-                pct >= 0.86 -> AttendanceTier.FULL
-                pct >= 0.71 -> AttendanceTier.VIABLE
-                pct >= 0.57 -> AttendanceTier.LIMITED
-                else -> AttendanceTier.INSUFFICIENT
-            }
-            DateSummary(date, count, total, absentNames, tier)
-        }.sortedByDescending { it.count }
     }
 
     private fun Timestamp.toLocalDate(): LocalDate {
