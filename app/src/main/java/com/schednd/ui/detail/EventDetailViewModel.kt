@@ -1,0 +1,163 @@
+package com.schednd.ui.detail
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.firebase.Timestamp
+import com.schednd.data.repository.AuthRepository
+import com.schednd.data.repository.EventRepository
+import com.schednd.data.repository.RecentEventsRepository
+import com.schednd.model.Event
+import com.schednd.model.Participant
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
+import javax.inject.Inject
+
+data class EventDetailUiState(
+    val event: Event? = null,
+    val participants: List<Participant> = emptyList(),
+    val datesAsLocal: List<LocalDate> = emptyList(),
+    val participantAvailability: Map<String, Set<LocalDate>> = emptyMap(),
+    val bestDates: Set<LocalDate> = emptySet(),
+    val isCreator: Boolean = false,
+    val isDeleted: Boolean = false,
+    val isLoading: Boolean = true,
+    val myName: String = "",
+    val myDraftDates: Set<LocalDate> = emptySet(),
+    val isSavingAvailability: Boolean = false,
+    val error: String? = null
+)
+
+@HiltViewModel
+class EventDetailViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
+    private val eventRepository: EventRepository,
+    private val authRepository: AuthRepository,
+    private val recentEventsRepository: RecentEventsRepository
+) : ViewModel() {
+
+    private val code: String = savedStateHandle.get<String>("code")!!
+    private val myUserId: String? get() = authRepository.getCurrentUserId()
+
+    private val _uiState = MutableStateFlow(EventDetailUiState())
+    val uiState: StateFlow<EventDetailUiState> = _uiState
+
+    init {
+        viewModelScope.launch {
+            try {
+                eventRepository.observeEvent(code)
+                    .combine(eventRepository.observeParticipants(code)) { event, participants ->
+                        Pair(event, participants)
+                    }
+                    .collect { (event, participants) ->
+                        if (event != null) {
+                            recentEventsRepository.saveEvent(code)
+                            val availability = participants.associate { p ->
+                                p.userId to p.availableDates.map { it.toLocalDate() }.toSet()
+                            }
+                            val datesLocal = availability.values
+                                .flatMap { it }
+                                .distinct()
+                                .sorted()
+                            val bestDates = computeBestDates(datesLocal, participants, availability)
+                            val isCreator = event.creatorId == authRepository.getCurrentUserId()
+                            val myParticipant = participants.find { it.userId == myUserId }
+
+                            _uiState.update { current ->
+                                current.copy(
+                                    event = event,
+                                    participants = participants,
+                                    datesAsLocal = datesLocal,
+                                    participantAvailability = availability,
+                                    bestDates = bestDates,
+                                    isCreator = isCreator,
+                                    isLoading = false,
+                                    // Only sync name/dates from Firestore if not currently editing
+                                    myName = if (!current.isSavingAvailability) myParticipant?.name ?: current.myName else current.myName,
+                                    myDraftDates = if (!current.isSavingAvailability) myParticipant?.availableDates?.map { it.toLocalDate() }?.toSet() ?: current.myDraftDates else current.myDraftDates
+                                )
+                            }
+                        } else {
+                            _uiState.update {
+                                it.copy(isLoading = false, error = "Evento no encontrado")
+                            }
+                        }
+                    }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = e.message) }
+            }
+        }
+    }
+
+    fun onMyNameChanged(name: String) {
+        _uiState.update { it.copy(myName = name) }
+    }
+
+    fun onMyDateToggled(date: LocalDate) {
+        _uiState.update { state ->
+            val dates = state.myDraftDates.toMutableSet()
+            if (date in dates) dates.remove(date) else dates.add(date)
+            state.copy(myDraftDates = dates)
+        }
+    }
+
+    fun saveMyAvailability() {
+        val state = _uiState.value
+        if (state.myName.isBlank() || state.myDraftDates.isEmpty()) return
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSavingAvailability = true, error = null) }
+            try {
+                val userId = authRepository.ensureSignedIn()
+                eventRepository.addOrUpdateAvailability(
+                    code = code,
+                    userId = userId,
+                    name = state.myName.trim(),
+                    dates = state.myDraftDates.sorted()
+                )
+                _uiState.update { it.copy(isSavingAvailability = false) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isSavingAvailability = false, error = e.message) }
+            }
+        }
+    }
+
+    fun deleteEvent() {
+        viewModelScope.launch {
+            try {
+                eventRepository.deleteEvent(code)
+                recentEventsRepository.removeEvent(code)
+                _uiState.update { it.copy(isDeleted = true) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message) }
+            }
+        }
+    }
+
+    private fun computeBestDates(
+        dates: List<LocalDate>,
+        participants: List<Participant>,
+        availability: Map<String, Set<LocalDate>>
+    ): Set<LocalDate> {
+        if (participants.isEmpty()) return emptySet()
+
+        val countPerDate = dates.associateWith { date ->
+            availability.values.count { date in it }
+        }
+        val maxCount = countPerDate.values.maxOrNull() ?: 0
+        if (maxCount == 0) return emptySet()
+
+        return countPerDate.filterValues { it == maxCount }.keys
+    }
+
+    private fun Timestamp.toLocalDate(): LocalDate {
+        return Instant.ofEpochSecond(seconds).atZone(ZoneOffset.UTC).toLocalDate()
+    }
+}

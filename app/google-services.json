@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "839989030889",
+    "project_id": "schednd",
+    "storage_bucket": "schednd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:839989030889:android:01cae1a116c089ad112578",
+        "android_client_info": {
+          "package_name": "com.schednd"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2ANBMGrJOBYLZ2HyBjSOuZI-Ex8C_Mzw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
