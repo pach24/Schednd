@@ -41,7 +41,8 @@ fun CalendarGrid(
     modifier: Modifier = Modifier,
     selectableDates: Set<LocalDate>? = null,
     minDate: LocalDate = LocalDate.now(),
-    dateAttendeeCount: Map<LocalDate, Int> = emptyMap()
+    dateAttendeeCount: Map<LocalDate, Int> = emptyMap(),
+    mySavedDates: Set<LocalDate> = emptySet()
 ) {
     var currentMonth by remember { mutableStateOf(YearMonth.from(minDate)) }
 
@@ -137,7 +138,11 @@ fun CalendarGrid(
                                 ),
                             contentAlignment = Alignment.Center
                         ) {
-                            val count = dateAttendeeCount[date] ?: 0
+                            val serverCount = dateAttendeeCount[date] ?: 0
+                            val count = maxOf(0, serverCount
+                                + (if (date in selectedDates) 1 else 0)
+                                - (if (date in mySavedDates) 1 else 0)
+                            )
                             val textColor = when {
                                 isSelected -> MaterialTheme.colorScheme.onPrimary
                                 isPast -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)

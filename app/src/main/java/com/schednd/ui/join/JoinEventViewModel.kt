@@ -56,7 +56,7 @@ class JoinEventViewModel @Inject constructor(
             try {
                 val event = eventRepository.getEvent(code)
                 if (event == null) {
-                    _uiState.update { it.copy(isLoading = false, error = "Evento no encontrado") }
+                    _uiState.update { it.copy(isLoading = false, error = "Sesión no encontrada") }
                 } else {
                     _uiState.update { it.copy(isLoading = false, event = event) }
                     observeParticipants(code)

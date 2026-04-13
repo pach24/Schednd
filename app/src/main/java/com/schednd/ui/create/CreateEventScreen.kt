@@ -76,7 +76,7 @@ fun CreateEventScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(if (uiState.createdCode == null) "Crear evento" else "Tus fechas disponibles")
+                    Text(if (uiState.createdCode == null) "Crear sesión" else "Tus fechas disponibles")
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -101,7 +101,7 @@ fun CreateEventScreen(
                 OutlinedTextField(
                     value = uiState.eventName,
                     onValueChange = viewModel::onNameChanged,
-                    label = { Text("Nombre del evento") },
+                    label = { Text("Nombre de la sesión") },
                     placeholder = { Text("Ej: Sesion D&D semanal") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -133,7 +133,7 @@ fun CreateEventScreen(
                             modifier = Modifier.padding(end = 8.dp)
                         )
                     }
-                    Text("Crear evento")
+                    Text("Crear sesión")
                 }
             } else {
                 // Phase 2: share code + select own dates
@@ -153,7 +153,7 @@ fun CreateEventScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Codigo del evento",
+                                text = "Codigo de la sesión",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )

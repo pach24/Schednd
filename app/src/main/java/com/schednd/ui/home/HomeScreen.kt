@@ -18,8 +18,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Casino
 import androidx.compose.material3.Button
+import androidx.compose.ui.res.painterResource
+import com.schednd.R
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -72,7 +73,7 @@ fun HomeScreen(
         ) {
             Spacer(modifier = Modifier.height(48.dp))
             Icon(
-                imageVector = Icons.Filled.Casino,
+                painter = painterResource(id = R.drawable.ic_d20),
                 contentDescription = null,
                 modifier = Modifier.size(80.dp),
                 tint = MaterialTheme.colorScheme.primary
@@ -104,14 +105,14 @@ fun HomeScreen(
                     onClick = onCreateEvent,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Crear evento")
+                    Text("Crear sesión")
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedButton(
                     onClick = onJoinEvent,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Unirse a evento")
+                    Text("Unirse a sesión")
                 }
 
                 if (uiState.recentEvents.isNotEmpty()) {
@@ -119,7 +120,7 @@ fun HomeScreen(
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Mis eventos",
+                        text = "Mis sesiones",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.fillMaxWidth()

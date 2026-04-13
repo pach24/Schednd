@@ -20,17 +20,28 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import javax.inject.Inject
 
+enum class AttendanceTier { FULL, VIABLE, LIMITED, INSUFFICIENT }
+
+data class DateSummary(
+    val date: LocalDate,
+    val count: Int,
+    val total: Int,
+    val absentNames: List<String>,
+    val tier: AttendanceTier
+)
+
 data class EventDetailUiState(
     val event: Event? = null,
     val participants: List<Participant> = emptyList(),
     val datesAsLocal: List<LocalDate> = emptyList(),
     val participantAvailability: Map<String, Set<LocalDate>> = emptyMap(),
-    val bestDates: Set<LocalDate> = emptySet(),
+    val dateSummaries: List<DateSummary> = emptyList(),
     val isCreator: Boolean = false,
     val isDeleted: Boolean = false,
     val isLoading: Boolean = true,
     val myName: String = "",
     val myDraftDates: Set<LocalDate> = emptySet(),
+    val mySavedDates: Set<LocalDate> = emptySet(),
     val isSavingAvailability: Boolean = false,
     val error: String? = null
 )
@@ -66,9 +77,11 @@ class EventDetailViewModel @Inject constructor(
                                 .flatMap { it }
                                 .distinct()
                                 .sorted()
-                            val bestDates = computeBestDates(datesLocal, participants, availability)
+                            val dateSummaries = computeDateSummaries(datesLocal, participants, availability)
                             val isCreator = event.creatorId == authRepository.getCurrentUserId()
                             val myParticipant = participants.find { it.userId == myUserId }
+                            val mySavedDates = myParticipant?.availableDates
+                                ?.map { it.toLocalDate() }?.toSet() ?: emptySet()
 
                             _uiState.update { current ->
                                 current.copy(
@@ -76,17 +89,18 @@ class EventDetailViewModel @Inject constructor(
                                     participants = participants,
                                     datesAsLocal = datesLocal,
                                     participantAvailability = availability,
-                                    bestDates = bestDates,
+                                    dateSummaries = dateSummaries,
                                     isCreator = isCreator,
                                     isLoading = false,
-                                    // Only sync name/dates from Firestore if not currently editing
+                                    mySavedDates = mySavedDates,
+                                    // Only sync draft name/dates from Firestore if not currently editing
                                     myName = if (!current.isSavingAvailability) myParticipant?.name ?: current.myName else current.myName,
-                                    myDraftDates = if (!current.isSavingAvailability) myParticipant?.availableDates?.map { it.toLocalDate() }?.toSet() ?: current.myDraftDates else current.myDraftDates
+                                    myDraftDates = if (!current.isSavingAvailability) mySavedDates else current.myDraftDates
                                 )
                             }
                         } else {
                             _uiState.update {
-                                it.copy(isLoading = false, error = "Evento no encontrado")
+                                it.copy(isLoading = false, error = "Sesión no encontrada")
                             }
                         }
                     }
@@ -141,20 +155,29 @@ class EventDetailViewModel @Inject constructor(
         }
     }
 
-    private fun computeBestDates(
+    private fun computeDateSummaries(
         dates: List<LocalDate>,
         participants: List<Participant>,
         availability: Map<String, Set<LocalDate>>
-    ): Set<LocalDate> {
-        if (participants.isEmpty()) return emptySet()
+    ): List<DateSummary> {
+        if (participants.isEmpty()) return emptyList()
+        val total = participants.size
 
-        val countPerDate = dates.associateWith { date ->
-            availability.values.count { date in it }
-        }
-        val maxCount = countPerDate.values.maxOrNull() ?: 0
-        if (maxCount == 0) return emptySet()
-
-        return countPerDate.filterValues { it == maxCount }.keys
+        return dates.map { date ->
+            val attending = participants.filter { p -> date in (availability[p.userId] ?: emptySet()) }
+            val count = attending.size
+            val absentNames = participants
+                .filter { p -> date !in (availability[p.userId] ?: emptySet()) }
+                .map { it.name }
+            val pct = count.toDouble() / total
+            val tier = when {
+                pct >= 0.86 -> AttendanceTier.FULL
+                pct >= 0.71 -> AttendanceTier.VIABLE
+                pct >= 0.57 -> AttendanceTier.LIMITED
+                else -> AttendanceTier.INSUFFICIENT
+            }
+            DateSummary(date, count, total, absentNames, tier)
+        }.sortedByDescending { it.count }
     }
 
     private fun Timestamp.toLocalDate(): LocalDate {

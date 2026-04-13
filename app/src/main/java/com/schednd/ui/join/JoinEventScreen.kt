@@ -60,7 +60,7 @@ fun JoinEventScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Unirse a evento") },
+                title = { Text("Unirse a sesión") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver")
@@ -83,7 +83,7 @@ fun JoinEventScreen(
             OutlinedTextField(
                 value = uiState.code,
                 onValueChange = viewModel::onCodeChanged,
-                label = { Text("Codigo del evento") },
+                label = { Text("Codigo de la sesión") },
                 placeholder = { Text("ABC123") },
                 singleLine = true,
                 textStyle = MaterialTheme.typography.headlineSmall.copy(
@@ -120,7 +120,7 @@ fun JoinEventScreen(
                             modifier = Modifier.padding(end = 8.dp)
                         )
                     }
-                    Text("Buscar evento")
+                    Text("Buscar sesión")
                 }
             } else {
                 // Phase 2: Event found, select availability

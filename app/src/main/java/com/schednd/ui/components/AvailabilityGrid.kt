@@ -12,6 +12,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ThumbDown
+import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,24 +25,56 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.schednd.model.Participant
+import com.schednd.ui.detail.AttendanceTier
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+
+private val tierGreen = Color(0xFF4CAF50)
+private val tierYellow = Color(0xFFFFC107)
+private val tierOrange = Color(0xFFFF9800)
+private val tierRed = Color(0xFFF44336)
+
+private fun tierColor(tier: AttendanceTier): Color = when (tier) {
+    AttendanceTier.FULL -> tierGreen
+    AttendanceTier.VIABLE -> tierYellow
+    AttendanceTier.LIMITED -> tierOrange
+    AttendanceTier.INSUFFICIENT -> tierRed
+}
+
+private fun tierIcon(tier: AttendanceTier): ImageVector = when (tier) {
+    AttendanceTier.FULL -> Icons.Filled.CheckCircle
+    AttendanceTier.VIABLE -> Icons.Filled.ThumbUp
+    AttendanceTier.LIMITED -> Icons.Filled.ThumbDown
+    AttendanceTier.INSUFFICIENT -> Icons.Filled.Cancel
+}
+
+private fun attendanceTier(count: Int, total: Int): AttendanceTier {
+    if (total == 0) return AttendanceTier.INSUFFICIENT
+    val pct = count.toDouble() / total
+    return when {
+        pct >= 0.86 -> AttendanceTier.FULL
+        pct >= 0.71 -> AttendanceTier.VIABLE
+        pct >= 0.57 -> AttendanceTier.LIMITED
+        else -> AttendanceTier.INSUFFICIENT
+    }
+}
 
 @Composable
 fun AvailabilityGrid(
     dates: List<LocalDate>,
     participants: List<Participant>,
     participantAvailability: Map<String, Set<LocalDate>>,
-    bestDates: Set<LocalDate>,
     modifier: Modifier = Modifier
 ) {
+    val total = participants.size
     val dateFormatter = DateTimeFormatter.ofPattern("d MMM", Locale("es"))
     val dayFormatter = DateTimeFormatter.ofPattern("EEE", Locale("es"))
 
@@ -44,15 +82,25 @@ fun AvailabilityGrid(
     val nameWidth = 100.dp
     val availableColor = Color(0xFF4CAF50)
     val unavailableColor = MaterialTheme.colorScheme.surfaceVariant
-    val bestColor = Color(0xFFFFD700)
 
     Column(modifier = modifier.horizontalScroll(rememberScrollState())) {
-        // Header row: dates
+        // Header row: dates with colored borders and tier icons
         Row {
             Box(modifier = Modifier.width(nameWidth))
             dates.forEach { date ->
+                val count = participants.count { p ->
+                    date in (participantAvailability[p.userId] ?: emptySet())
+                }
+                val tier = attendanceTier(count, total)
+                val color = tierColor(tier)
+                val icon = tierIcon(tier)
+
                 Column(
-                    modifier = Modifier.width(cellSize),
+                    modifier = Modifier
+                        .width(cellSize)
+                        .padding(2.dp)
+                        .border(2.dp, color, RoundedCornerShape(6.dp))
+                        .padding(vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -63,8 +111,15 @@ fun AvailabilityGrid(
                     Text(
                         text = dateFormatter.format(date),
                         style = MaterialTheme.typography.labelSmall,
-                        fontWeight = if (date in bestDates) FontWeight.Bold else FontWeight.Normal,
-                        color = if (date in bestDates) bestColor else MaterialTheme.colorScheme.onSurface
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center
+                    )
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = color,
+                        modifier = Modifier.size(14.dp)
                     )
                 }
             }
@@ -88,6 +143,12 @@ fun AvailabilityGrid(
                 )
                 dates.forEach { date ->
                     val isAvailable = date in available
+                    val count = participants.count { p ->
+                        date in (participantAvailability[p.userId] ?: emptySet())
+                    }
+                    val tier = attendanceTier(count, total)
+                    val borderColor = tierColor(tier)
+
                     Box(
                         modifier = Modifier
                             .size(cellSize)
@@ -98,12 +159,8 @@ fun AvailabilityGrid(
                                 else unavailableColor
                             )
                             .then(
-                                if (date in bestDates && isAvailable)
-                                    Modifier.border(
-                                        2.dp,
-                                        bestColor,
-                                        RoundedCornerShape(4.dp)
-                                    )
+                                if (isAvailable)
+                                    Modifier.border(1.5.dp, borderColor, RoundedCornerShape(4.dp))
                                 else Modifier
                             ),
                         contentAlignment = Alignment.Center
@@ -133,6 +190,8 @@ fun AvailabilityGrid(
                 val count = participants.count { p ->
                     (participantAvailability[p.userId] ?: emptySet()).contains(date)
                 }
+                val tier = attendanceTier(count, total)
+                val color = tierColor(tier)
                 Box(
                     modifier = Modifier
                         .size(cellSize)
@@ -140,11 +199,11 @@ fun AvailabilityGrid(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "$count/${participants.size}",
+                        text = "$count/$total",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
-                        color = if (date in bestDates) bestColor else MaterialTheme.colorScheme.onSurface
+                        color = color
                     )
                 }
             }

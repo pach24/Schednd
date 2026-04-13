@@ -16,7 +16,7 @@ class SchedndApp : Application() {
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             NOTIFICATION_CHANNEL_ID,
-            "Actualizaciones de evento",
+            "Actualizaciones de sesión",
             NotificationManager.IMPORTANCE_DEFAULT
         ).apply {
             description = "Notificaciones cuando alguien actualiza su disponibilidad"

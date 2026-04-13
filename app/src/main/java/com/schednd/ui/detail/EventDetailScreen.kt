@@ -53,6 +53,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.schednd.ui.components.AvailabilityGrid
 import com.schednd.ui.components.CalendarGrid
+import com.schednd.ui.detail.AttendanceTier
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,8 +76,8 @@ fun EventDetailScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Borrar evento") },
-            text = { Text("¿Seguro que quieres borrar este evento? Esta acción no se puede deshacer.") },
+            title = { Text("Borrar sesión") },
+            text = { Text("¿Seguro que quieres borrar esta sesión? Esta acción no se puede deshacer.") },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteDialog = false
@@ -94,7 +97,7 @@ fun EventDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(uiState.event?.name ?: "Evento") },
+                title = { Text(uiState.event?.name ?: "Sesión") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver")
@@ -105,7 +108,7 @@ fun EventDetailScreen(
                         IconButton(onClick = { showDeleteDialog = true }) {
                             Icon(
                                 Icons.Filled.Delete,
-                                contentDescription = "Borrar evento",
+                                contentDescription = "Borrar sesión",
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
@@ -159,7 +162,7 @@ fun EventDetailScreen(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Codigo del evento",
+                                    text = "Codigo de la sesión",
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
@@ -237,31 +240,67 @@ fun EventDetailScreen(
                         AvailabilityGrid(
                             dates = uiState.datesAsLocal,
                             participants = uiState.participants,
-                            participantAvailability = uiState.participantAvailability,
-                            bestDates = uiState.bestDates
+                            participantAvailability = uiState.participantAvailability
                         )
 
-                        if (uiState.bestDates.isNotEmpty()) {
+                        // Date summaries card (exclude INSUFFICIENT)
+                        val visibleSummaries = uiState.dateSummaries
+                            .filter { it.tier != AttendanceTier.INSUFFICIENT }
+                        if (visibleSummaries.isNotEmpty()) {
+                            val dateFormat = DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("es"))
                             Spacer(modifier = Modifier.height(16.dp))
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
                                 )
                             ) {
                                 Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(
-                                        text = "Mejor(es) fecha(s):",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                                    )
-                                    uiState.bestDates.sorted().forEach { date ->
+                                    val optimal = visibleSummaries.filter {
+                                        it.tier == AttendanceTier.FULL || it.tier == AttendanceTier.VIABLE
+                                    }
+                                    val others = visibleSummaries.filter {
+                                        it.tier == AttendanceTier.LIMITED
+                                    }
+
+                                    if (optimal.isNotEmpty()) {
                                         Text(
-                                            text = date.toString(),
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                                            text = "Fechas recomendadas",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        optimal.forEach { s ->
+                                            val label = if (s.absentNames.isEmpty())
+                                                "Asistencia completa · ${s.count}/${s.total}"
+                                            else
+                                                "Asisten ${s.count}/${s.total} · Falta: ${s.absentNames.joinToString(", ")}"
+                                            Text(
+                                                text = "• ${dateFormat.format(s.date)}  –  $label",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+
+                                    if (others.isNotEmpty()) {
+                                        if (optimal.isNotEmpty()) Spacer(modifier = Modifier.height(10.dp))
+                                        Text(
+                                            text = "Otras opciones",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        others.forEach { s ->
+                                            val label = "Asisten ${s.count}/${s.total} · Faltan: ${s.absentNames.joinToString(", ")}"
+                                            Text(
+                                                text = "• ${dateFormat.format(s.date)}  –  $label",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -315,7 +354,8 @@ fun EventDetailScreen(
                         CalendarGrid(
                             selectedDates = uiState.myDraftDates,
                             onDateToggled = viewModel::onMyDateToggled,
-                            dateAttendeeCount = attendeeCounts
+                            dateAttendeeCount = attendeeCounts,
+                            mySavedDates = uiState.mySavedDates
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
