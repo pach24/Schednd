@@ -1,19 +1,35 @@
 package com.schednd.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
 import com.schednd.ui.create.CreateEventScreen
+import com.schednd.ui.detail.EditAvailabilityScreen
 import com.schednd.ui.detail.EventDetailScreen
+import com.schednd.ui.detail.EventDetailViewModel
 import com.schednd.ui.home.HomeScreen
 import com.schednd.ui.join.JoinEventScreen
+import com.schednd.ui.theme.NavEnterTransition
+import com.schednd.ui.theme.NavExitTransition
+import com.schednd.ui.theme.NavPopEnterTransition
+import com.schednd.ui.theme.NavPopExitTransition
 
 @Composable
 fun SchedndNavGraph(navController: NavHostController) {
-    NavHost(navController = navController, startDestination = "home") {
+    NavHost(
+        navController = navController,
+        startDestination = "home",
+        enterTransition = { NavEnterTransition },
+        exitTransition = { NavExitTransition },
+        popEnterTransition = { NavPopEnterTransition },
+        popExitTransition = { NavPopExitTransition }
+    ) {
         composable("home") {
             HomeScreen(
                 onCreateEvent = { navController.navigate("create") },
@@ -41,13 +57,35 @@ fun SchedndNavGraph(navController: NavHostController) {
                 onBack = { navController.popBackStack() }
             )
         }
-        composable(
-            "event/{code}",
+        navigation(
+            startDestination = "event/{code}/detail",
+            route = "event/{code}",
             arguments = listOf(navArgument("code") { type = NavType.StringType })
         ) {
-            EventDetailScreen(
-                onBack = { navController.popBackStack("home", inclusive = false) }
-            )
+            composable("event/{code}/detail") { backStackEntry ->
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("event/{code}")
+                }
+                val viewModel: EventDetailViewModel = hiltViewModel(parentEntry)
+                val code = backStackEntry.arguments?.getString("code").orEmpty()
+                EventDetailScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack("home", inclusive = false) },
+                    onEditAvailability = {
+                        navController.navigate("event/$code/edit")
+                    }
+                )
+            }
+            composable("event/{code}/edit") { backStackEntry ->
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry("event/{code}")
+                }
+                val viewModel: EventDetailViewModel = hiltViewModel(parentEntry)
+                EditAvailabilityScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() }
+                )
+            }
         }
     }
 }

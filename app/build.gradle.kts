@@ -71,12 +71,14 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
     implementation(libs.firebase.messaging)
+    implementation(libs.firebase.storage)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.play.services)
 
     // Core
+    implementation(libs.coil.compose)
     implementation(libs.androidx.core.ktx)
 
     // Test

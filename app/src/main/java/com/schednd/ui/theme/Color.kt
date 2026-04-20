@@ -2,16 +2,43 @@ package com.schednd.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// D&D themed colors
-val Purple80 = Color(0xFFCFBCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Gold80 = Color(0xFFFFE082)
+// Trade Republic inspired — monochrome, minimal, no accent blue
+// Primary actions are white/black depending on theme
 
-val Purple40 = Color(0xFF6A1B9A)
-val PurpleGrey40 = Color(0xFF625B71)
-val Gold40 = Color(0xFFFFB300)
+// Light mode
+val LightBackground = Color(0xFFF4F4F6)
+val LightSurface = Color(0xFFFFFFFF)
+val LightSurfaceVariant = Color(0xFFF0F0F0)
+val LightOnSurface = Color(0xFF111111)
+val LightOnSurfaceVariant = Color(0xFF6E6E73)
+val LightOutline = Color(0xFFD8D8D8)
+val LightPrimary = Color(0xFF111111)
+val LightOnPrimary = Color(0xFFFFFFFF)
 
-val DarkBackground = Color(0xFF1A1A2E)
-val DarkSurface = Color(0xFF16213E)
-val LightBackground = Color(0xFFFFFBFE)
-val LightSurface = Color(0xFFFFFBFE)
+// Dark mode
+val DarkBackground = Color(0xFF0D0D0D)
+val DarkSurface = Color(0xFF1A1A1A)
+val DarkSurfaceVariant = Color(0xFF252525)
+val DarkOnSurface = Color(0xFFF5F5F5)
+val DarkOnSurfaceVariant = Color(0xFF8A8A8E)
+val DarkOutline = Color(0xFF333333)
+val DarkPrimary = Color(0xFFFFFFFF)
+val DarkOnPrimary = Color(0xFF111111)
+
+// Tier colors — muted, not screaming
+val TierFull = Color(0xFF2DC653)
+val TierViable = Color(0xFFE8A317)
+val TierLimited = Color(0xFFD4712A)
+val TierInsufficient = Color(0xFFD43030)
+
+// Avatar palette — muted, desaturated tones
+val AvatarColors = listOf(
+    Color(0xFF6B6B8D), // muted indigo
+    Color(0xFF5A8F8B), // muted teal
+    Color(0xFF8B6B8D), // muted purple
+    Color(0xFF5A7A99), // muted blue
+    Color(0xFF5A8B5E), // muted green
+    Color(0xFFA08050), // muted amber
+    Color(0xFF9E6060), // muted rose
+    Color(0xFF5A8A9E), // muted cyan
+)
