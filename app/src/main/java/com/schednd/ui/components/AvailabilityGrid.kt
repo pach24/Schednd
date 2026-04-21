@@ -1,10 +1,12 @@
 package com.schednd.ui.components
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.copy
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -47,6 +49,10 @@ import com.schednd.ui.theme.TierViable
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import androidx.compose.material.icons.rounded.Check
+import com.schednd.ui.theme.CalendarCellShape
+import com.schednd.ui.theme.SchedndTheme
+
 
 private fun tierColor(tier: AttendanceTier): Color = when (tier) {
     AttendanceTier.FULL -> TierFull
@@ -64,7 +70,40 @@ private fun tierIcon(tier: AttendanceTier): ImageVector = when (tier) {
 
 private val CellShape = SquircleCellShape
 private val HeaderShape = SquircleHeaderShape
+@Composable
+private fun getHeatmapColor(count: Int, total: Int): Color {
+    val isDark = isSystemInDarkTheme()
 
+    // Paleta oficial de contribuciones de GitHub
+    val heatmapGreens = if (isDark) {
+        listOf(
+            Color(0xFF161B22), // Nivel 0: Fondo vacío (GitHub Dark)
+            Color(0xFF0E4429), // Nivel 1: Verde muy oscuro
+            Color(0xFF006D32), // Nivel 2
+            Color(0xFF26A641), // Nivel 3
+            Color(0xFF39D353), // Nivel 4: Verde brillante
+            Color(0xFF53E06C), // Nivel 5
+            Color(0xFF7CF08D)  // Nivel 6: Verde máximo (Vibrante)
+        )
+    } else {
+        listOf(
+            Color(0xFFEBEDF0), // Nivel 0: Gris/Verde tenue (GitHub Light)
+            Color(0xFF9BE9A8), // Nivel 1: Verde muy claro
+            Color(0xFF40C463), // Nivel 2
+            Color(0xFF30A14E), // Nivel 3
+            Color(0xFF216E39), // Nivel 4: Verde bosque
+            Color(0xFF19532A), // Nivel 5
+            Color(0xFF0D3D1E)  // Nivel 6: Verde máximo (Oscuro)
+        )
+    }
+
+    if (total <= 0 || count == 0) return heatmapGreens[0]
+
+    val ratio = count.toFloat() / total
+    // Mapeo proporcional a los 7 niveles
+    val index = (ratio * (heatmapGreens.size - 1)).toInt().coerceIn(0, heatmapGreens.size - 1)
+    return heatmapGreens[index]
+}
 @Composable
 fun AvailabilityGrid(
     dates: List<LocalDate>,
@@ -73,150 +112,116 @@ fun AvailabilityGrid(
     modifier: Modifier = Modifier
 ) {
     val total = participants.size
-    val dateFormatter = DateTimeFormatter.ofPattern("d MMM", Locale("es"))
-    val dayFormatter = DateTimeFormatter.ofPattern("EEE", Locale("es"))
+    val dayNameFormatter = DateTimeFormatter.ofPattern("EEE", Locale("es"))
+    val dayNumFormatter = DateTimeFormatter.ofPattern("d", Locale("es"))
+    val monthFormatter = DateTimeFormatter.ofPattern("MMM", Locale("es"))
 
-    val cellSize = 56.dp
-    val nameWidth = 100.dp
-    val unavailableColor = MaterialTheme.colorScheme.surfaceVariant
+    val cellSize = 40.dp
+    val nameWidth = 75.dp
 
-    // Grid fade-in animation
+    // Ajustamos el color para que sea más visible cuando no hay selección
+    val unavailableColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f)
+
     val gridAlpha = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        gridAlpha.animateTo(1f, tween(500))
-    }
+    LaunchedEffect(Unit) { gridAlpha.animateTo(1f, tween(500)) }
 
     Column(
         modifier = modifier
             .horizontalScroll(rememberScrollState())
             .graphicsLayer { alpha = gridAlpha.value }
     ) {
-        // Header row
-        Row {
+        // --- HEADER ROW (DATES) ---
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Box(modifier = Modifier.width(nameWidth))
-            dates.forEachIndexed { colIndex, date ->
-                val count = participants.count { p ->
-                    date in (participantAvailability[p.userId] ?: emptySet())
-                }
-                val tier = computeAttendanceTier(count, total)
-                val color = tierColor(tier)
-                val icon = tierIcon(tier)
-
-                // Staggered fade-in for columns
-                val colAlpha = remember { Animatable(0f) }
-                LaunchedEffect(Unit) {
-                    kotlinx.coroutines.delay(colIndex * 40L)
-                    colAlpha.animateTo(1f, tween(350))
-                }
-
+            dates.forEach { date ->
+                // Mantenemos el conteo para el color del mes si decides usarlo,
+                // pero ahora el fondo es constante.
                 Column(
                     modifier = Modifier
-                        .width(cellSize)
+                        .size(cellSize)
                         .padding(2.dp)
-                        .graphicsLayer { alpha = colAlpha.value }
-                        .border(2.dp, color.copy(alpha = 0.75f), HeaderShape)
-                        .padding(vertical = 4.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .clip(CalendarCellShape)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh), // Siempre color neutro
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
                 ) {
                     Text(
-                        text = dayFormatter.format(date).replaceFirstChar { it.uppercase() },
-                        style = MaterialTheme.typography.labelSmall,
+                        text = dayNameFormatter.format(date).take(3).uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 7.sp,
+                            lineHeight = 7.sp,
+                            letterSpacing = 0.sp
+                        ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = dateFormatter.format(date),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center
+                        text = dayNumFormatter.format(date),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            lineHeight = 10.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = color,
-                        modifier = Modifier.size(14.dp)
+                    Text(
+                        text = monthFormatter.format(date).take(3).uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 7.sp,
+                            lineHeight = 7.sp,
+                            letterSpacing = 0.sp,
+                            fontWeight = FontWeight.Bold // Mes en negrita
+                        ),
+                        // Forzamos a negro o al color de texto principal del tema
+                        color = if (isSystemInDarkTheme()) Color.White else Color.Black
                     )
                 }
             }
         }
 
-        // Participant rows
-        participants.forEachIndexed { rowIndex, participant ->
+        // --- PARTICIPANT ROWS ---
+        participants.forEach { participant ->
             val available = participantAvailability[participant.userId] ?: emptySet()
 
-            // Staggered row fade-in
-            val rowAlpha = remember { Animatable(0f) }
-            LaunchedEffect(Unit) {
-                kotlinx.coroutines.delay(rowIndex * 50L)
-                rowAlpha.animateTo(1f, tween(350))
-            }
-
-            Row(
-                modifier = Modifier
-                    .width(IntrinsicSize.Max)
-                    .graphicsLayer { alpha = rowAlpha.value },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = participant.name,
                     modifier = Modifier
                         .width(nameWidth)
                         .padding(end = 4.dp),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 dates.forEach { date ->
                     val isAvailable = date in available
-                    val count = participants.count { p ->
-                        date in (participantAvailability[p.userId] ?: emptySet())
-                    }
-                    val tier = computeAttendanceTier(count, total)
-                    val borderColor = tierColor(tier)
+                    val count = participants.count { p -> date in (participantAvailability[p.userId] ?: emptySet()) }
+                    val cellIntensityColor = getHeatmapColor(count, total)
 
-                    val cellBorderColor = if (isAvailable)
-                        borderColor.copy(alpha = 0.75f)
-                    else
-                        MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
                     Box(
                         modifier = Modifier
                             .size(cellSize)
                             .padding(2.dp)
-                            .clip(CellShape)
+                            .clip(CalendarCellShape)
                             .background(
-                                if (isAvailable) TierFull.copy(alpha = 0.15f)
+                                if (isAvailable) cellIntensityColor
                                 else unavailableColor
                             )
-                            .border(2.dp, cellBorderColor, CellShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isAvailable) {
-                            Text(
-                                text = "OK",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TierFull
-                            )
-                        }
-                    }
+                    )
                 }
             }
         }
 
-        // Summary row
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        // --- SUMMARY ROW ---
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
             Text(
                 text = "Total",
                 modifier = Modifier.width(nameWidth),
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
+                textAlign = TextAlign.Start
             )
             dates.forEach { date ->
-                val count = participants.count { p ->
-                    (participantAvailability[p.userId] ?: emptySet()).contains(date)
-                }
-                val tier = computeAttendanceTier(count, total)
-                val color = tierColor(tier)
+                val count = participants.count { p -> (participantAvailability[p.userId] ?: emptySet()).contains(date) }
+                val color = getHeatmapColor(count, total)
                 Box(
                     modifier = Modifier
                         .size(cellSize)
@@ -225,12 +230,66 @@ fun AvailabilityGrid(
                 ) {
                     Text(
                         text = "$count/$total",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        color = color
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp, fontWeight = FontWeight.ExtraBold),
+                        // Si el count es 0, usamos onSurfaceVariant para que no sea un verde invisible
+                        color = if (count > 0) color else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(
+    name = "Light Mode",
+    showBackground = true
+)
+@androidx.compose.ui.tooling.preview.Preview(
+    name = "Dark Mode",
+    showBackground = true,
+    uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+fun AvailabilityGridPreview() {
+    // Usamos el tema real de tu aplicación
+    SchedndTheme {
+        // Surface aplica automáticamente DarkBackground o LightBackground de tu Theme.kt
+        androidx.compose.material3.Surface(
+            color = MaterialTheme.colorScheme.background
+        ) {
+            val today = remember { LocalDate.now() }
+            // Generamos una semana de ejemplo
+            val dates = remember { (0..5).map { today.plusDays(it.toLong()) } }
+
+            val participants = remember {
+                listOf(
+                    Participant(userId = "1", name = "Alex"),
+
+                    Participant(userId = "2", name = "Beatriz"),
+                    Participant(userId = "3", name = "Carlos"),
+                    Participant(userId = "4", name = "Diana"),
+                    Participant(userId = "5", name = "Eduardo"),
+                    Participant(userId = "6", name = "Fabiola")
+                )
+            }
+
+            val availability = remember {
+                mapOf(
+                    "1" to setOf(dates[0], dates[1], dates[2]),
+                    "2" to setOf(dates[0], dates[2], dates[4]),
+                    "3" to setOf(dates[0], dates[1]),
+                    "4" to setOf(dates[0], dates[3], dates[5]),
+                    "5" to setOf(dates[0], dates[1], dates[2], dates[3]),
+                    "6" to setOf(dates[0], dates[1], dates[2], dates[3], dates[4], dates[5])
+                )
+            }
+
+            Box(modifier = Modifier.padding(16.dp)) {
+                AvailabilityGrid(
+                    dates = dates,
+                    participants = participants,
+                    participantAvailability = availability
+                )
             }
         }
     }

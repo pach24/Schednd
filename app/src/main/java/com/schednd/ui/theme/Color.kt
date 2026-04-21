@@ -8,7 +8,7 @@ import androidx.compose.ui.graphics.Color
 // Light mode
 val LightBackground = Color(0xFFF4F4F6)
 val LightSurface = Color(0xFFFFFFFF)
-val LightSurfaceVariant = Color(0xFFF0F0F0)
+val LightSurfaceVariant = Color(0xFFEEEEEE)
 val LightOnSurface = Color(0xFF111111)
 val LightOnSurfaceVariant = Color(0xFF6E6E73)
 val LightOutline = Color(0xFFD8D8D8)

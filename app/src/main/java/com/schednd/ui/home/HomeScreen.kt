@@ -165,7 +165,7 @@ fun HomeScreen(
                                     pressedElevation = 0.dp
                                 )
                             ) {
-                                Text("Crear sesion", modifier = Modifier.padding(vertical = 4.dp))
+                                Text("Crear sesión", modifier = Modifier.padding(vertical = 4.dp))
                             }
                         }
 
@@ -181,7 +181,7 @@ fun HomeScreen(
                                 shape = FullRoundShape,
                                 interactionSource = joinInteraction
                             ) {
-                                Text("Unirse a sesion", modifier = Modifier.padding(vertical = 4.dp))
+                                Text("Unirse a sesión", modifier = Modifier.padding(vertical = 4.dp))
                             }
                         }
 

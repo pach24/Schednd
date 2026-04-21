@@ -53,3 +53,4 @@ class SquircleShape(private val cornerRadius: Dp) : Shape {
 val SquircleCellShape = SquircleShape(12.dp)
 val SquircleHeaderShape = SquircleShape(14.dp)
 val CalendarCellShape = SquircleShape(14.dp)
+
