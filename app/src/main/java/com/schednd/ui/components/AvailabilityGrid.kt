@@ -1,12 +1,20 @@
 package com.schednd.ui.components
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseOutBack
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.StartOffset
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.copy
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -29,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -50,6 +59,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.runtime.getValue
 import com.schednd.ui.theme.CalendarCellShape
 import com.schednd.ui.theme.SchedndTheme
 
@@ -104,6 +114,37 @@ private fun getHeatmapColor(count: Int, total: Int): Color {
     val index = (ratio * (heatmapGreens.size - 1)).toInt().coerceIn(0, heatmapGreens.size - 1)
     return heatmapGreens[index]
 }
+
+// Paletas de glow independientes por tema: ajustables por separado.
+// Nivel 0 = sin disponibilidad → nunca se pinta (el halo sólo se dibuja si shouldPulse).
+private val GlowGreensDark = listOf(
+    Color(0xFF0E4429),
+    Color(0xFF006D32),
+    Color(0xFF26A641),
+    Color(0xFF39D353),
+    Color(0xFF53E06C),
+    Color(0xFF7CF08D)
+)
+
+private val GlowGreensLight = listOf(
+    Color(0xFF001FFF),
+    Color(0xFFCA2CF6),
+    Color(0xFFA62626),
+    Color(0xFFDEC200),
+    Color(0xFF26FF00),
+    Color(0xFF000000)
+)
+
+@Composable
+private fun getGlowColor(count: Int, total: Int): Color {
+    val palette = if (isSystemInDarkTheme()) GlowGreensDark else GlowGreensLight
+    if (total <= 0 || count == 0) return palette[0]
+    val ratio = count.toFloat() / total
+    val index = (ratio * (palette.size - 1)).toInt().coerceIn(0, palette.size - 1)
+    return palette[index]
+}
+
+
 @Composable
 fun AvailabilityGrid(
     dates: List<LocalDate>,
@@ -118,120 +159,150 @@ fun AvailabilityGrid(
 
     val cellSize = 40.dp
     val nameWidth = 75.dp
-
-    // Ajustamos el color para que sea más visible cuando no hay selección
     val unavailableColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f)
 
+    val dateCounts = remember(dates, participants, participantAvailability) {
+        dates.associateWith { date ->
+            participants.count { p -> date in (participantAvailability[p.userId] ?: emptySet()) }
+        }
+    }
+    val maxCount = dateCounts.values.maxOrNull() ?: 0
+    val bestDates = if (maxCount > 0) {
+        dateCounts.filterValues { it == maxCount }.keys
+    } else {
+        emptySet()
+    }
+
+    // Animación de entrada de la rejilla completa
     val gridAlpha = remember { Animatable(0f) }
-    LaunchedEffect(Unit) { gridAlpha.animateTo(1f, tween(500)) }
+    LaunchedEffect(Unit) { gridAlpha.animateTo(1f, tween(800, easing = EaseOutBack)) }
+
+    // Transición infinita para el efecto "juicy"
+    val infiniteTransition = rememberInfiniteTransition(label = "juicyPulse")
 
     Column(
         modifier = modifier
             .horizontalScroll(rememberScrollState())
             .graphicsLayer { alpha = gridAlpha.value }
+            .padding(16.dp)
     ) {
-        // --- HEADER ROW (DATES) ---
+        // --- HEADER ROW (DATES) - SIN PULSO ---
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(modifier = Modifier.width(nameWidth))
             dates.forEach { date ->
-                // Mantenemos el conteo para el color del mes si decides usarlo,
-                // pero ahora el fondo es constante.
                 Column(
                     modifier = Modifier
                         .size(cellSize)
                         .padding(2.dp)
                         .clip(CalendarCellShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh), // Siempre color neutro
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
+                    verticalArrangement = Arrangement.Center
                 ) {
                     Text(
                         text = dayNameFormatter.format(date).take(3).uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 7.sp,
-                            lineHeight = 7.sp,
-                            letterSpacing = 0.sp
-                        ),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 7.sp, lineHeight = 7.sp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = dayNumFormatter.format(date),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            lineHeight = 10.sp
-                        ),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.ExtraBold),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = monthFormatter.format(date).take(3).uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 7.sp,
-                            lineHeight = 7.sp,
-                            letterSpacing = 0.sp,
-                            fontWeight = FontWeight.Bold // Mes en negrita
-                        ),
-                        // Forzamos a negro o al color de texto principal del tema
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 7.sp, fontWeight = FontWeight.Bold),
                         color = if (isSystemInDarkTheme()) Color.White else Color.Black
                     )
                 }
             }
         }
 
-        // --- PARTICIPANT ROWS ---
-        participants.forEach { participant ->
+        // --- PARTICIPANT ROWS - CON PULSO "JUICY" ---
+        participants.forEachIndexed { rowIndex, participant ->
             val available = participantAvailability[participant.userId] ?: emptySet()
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = participant.name,
-                    modifier = Modifier
-                        .width(nameWidth)
-                        .padding(end = 4.dp),
+                    modifier = Modifier.width(nameWidth).padding(end = 4.dp),
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+
                 dates.forEach { date ->
                     val isAvailable = date in available
-                    val count = participants.count { p -> date in (participantAvailability[p.userId] ?: emptySet()) }
+                    val count = dateCounts[date] ?: 0
                     val cellIntensityColor = getHeatmapColor(count, total)
+                    val shouldPulse = isAvailable && date in bestDates
+
+                    val pulseScale by infiniteTransition.animateFloat(
+                        initialValue = 0.6f,
+                        targetValue = 0.95f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(1200, easing = FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse,
+                            initialStartOffset = StartOffset(rowIndex * 120)
+                        ),
+                        label = "cellPulse"
+                    )
 
                     Box(
                         modifier = Modifier
                             .size(cellSize)
-                            .padding(2.dp)
-                            .clip(CalendarCellShape)
-                            .background(
-                                if (isAvailable) cellIntensityColor
-                                else unavailableColor
+                            .padding(2.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (shouldPulse) {
+                            val glowColor = getGlowColor(count, total)
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .graphicsLayer {
+                                        scaleX = pulseScale * 1.6f
+                                        scaleY = pulseScale * 1.6f
+                                    }
+                                    .background(
+                                        brush = Brush.radialGradient(
+                                            colors = listOf(
+                                                glowColor.copy(alpha = 0.75f),
+                                                glowColor.copy(alpha = 0.35f),
+                                                Color.Transparent
+                                            )
+                                        ),
+                                        shape = CalendarCellShape
+                                    )
                             )
-                    )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clip(CalendarCellShape)
+                                .background(if (isAvailable) cellIntensityColor else unavailableColor)
+                        )
+                    }
                 }
             }
         }
 
-        // --- SUMMARY ROW ---
+        // --- SUMMARY ROW (TOTAL) - SIN PULSO ---
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
             Text(
                 text = "Total",
                 modifier = Modifier.width(nameWidth),
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
-                textAlign = TextAlign.Start
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold)
             )
             dates.forEach { date ->
-                val count = participants.count { p -> (participantAvailability[p.userId] ?: emptySet()).contains(date) }
+                val count = dateCounts[date] ?: 0
                 val color = getHeatmapColor(count, total)
                 Box(
-                    modifier = Modifier
-                        .size(cellSize)
-                        .padding(2.dp),
+                    modifier = Modifier.size(cellSize).padding(2.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "$count/$total",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp, fontWeight = FontWeight.ExtraBold),
-                        // Si el count es 0, usamos onSurfaceVariant para que no sea un verde invisible
                         color = if (count > 0) color else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
