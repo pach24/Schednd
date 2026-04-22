@@ -1,7 +1,13 @@
 package com.schednd.ui.components
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseInOutSine
 import androidx.compose.animation.core.EaseOutBack
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -22,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -116,6 +123,30 @@ fun AvailabilityGrid(
             Box(modifier = Modifier.width(nameWidth))
             dates.forEach { date ->
                 val isBest = date in bestDates
+                val pulseTransition = rememberInfiniteTransition(label = "dot_pulse")
+                val haloAlpha by pulseTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 0f,
+                    animationSpec = infiniteRepeatable(
+                        animation = keyframes {
+                            durationMillis = 1800
+                            0f at 0
+                            0.75f at 350
+                            0f at 1800
+                        },
+                        repeatMode = RepeatMode.Restart
+                    ),
+                    label = "halo_alpha"
+                )
+                val haloScale by pulseTransition.animateFloat(
+                    initialValue = 1f,
+                    targetValue = 3.1f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(1800, easing = EaseInOutSine),
+                        repeatMode = RepeatMode.Restart
+                    ),
+                    label = "halo_scale"
+                )
                 // Aumentamos la altura de la celda del header específicamente
                 Box(
                     modifier = Modifier.size(width = cellSize, height = cellSize + 12.dp),
@@ -174,15 +205,29 @@ fun AvailabilityGrid(
                             color = if (isSystemInDarkTheme()) Color.White else Color.Black
                         )
 
-                        // El punto solo aparece si es uno de los mejores días
                         if (isBest) {
                             Spacer(modifier = Modifier.height(4.dp))
-                            Box(
-                                modifier = Modifier
-                                    .size(5.dp)
-                                    .clip(RoundedCornerShape(50))
-                                    .background(Color(0xFF0082F3))
-                            )
+                            Box(contentAlignment = Alignment.Center) {
+                                // Halo: crece desde el dot hacia afuera mientras se desvanece
+                                Box(
+                                    modifier = Modifier
+                                        .size(3.dp)
+                                        .graphicsLayer {
+                                            scaleX = haloScale
+                                            scaleY = haloScale
+                                            alpha = haloAlpha
+                                        }
+                                        .clip(RoundedCornerShape(50))
+                                        .background(Color(0xFF0082F3))
+                                )
+                                // Dot principal: estático
+                                Box(
+                                    modifier = Modifier
+                                        .size(5.dp)
+                                        .clip(RoundedCornerShape(50))
+                                        .background(Color(0xFF0082F3))
+                                )
+                            }
                         }
                     }
                 }
