@@ -1,22 +1,30 @@
 package com.schednd.ui.theme
 
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
-
+// --- SHAPES ESTÁNDAR ---
 val AppShapes = Shapes(
     small = RoundedCornerShape(8.dp),
     medium = RoundedCornerShape(12.dp),
@@ -29,6 +37,61 @@ val ButtonShape = RoundedCornerShape(12.dp)
 val TextFieldShape = RoundedCornerShape(12.dp)
 val FullRoundShape = RoundedCornerShape(50)
 
+/**
+ * VerticalSquircleShape: Mantiene la curvatura orgánica de un Squircle
+ * pero permite dimensiones asimétricas y desbordes verticales.
+ */
+class VerticalSquircleShape(
+    private val cornerRadius: Dp,
+    private val extraHeightTop: Dp = 0.dp,
+    private val extraHeightBottom: Dp = 0.dp
+) : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density
+    ): Outline {
+        // El radio se basa en la dimensión menor (normalmente el ancho)
+        val r = with(density) { cornerRadius.toPx() }
+            .coerceAtMost(minOf(size.width, size.height) / 2f)
+
+        val topEx = with(density) { extraHeightTop.toPx() }
+        val botEx = with(density) { extraHeightBottom.toPx() }
+
+        val k = 0.5519f
+        val w = size.width
+        val h = size.height
+
+        val path = Path().apply {
+            // Superior izquierda (con desborde)
+            moveTo(r, -topEx)
+            lineTo(w - r, -topEx)
+            // Esquina superior derecha
+            cubicTo(w - r + r * k, -topEx, w, r - r * k - topEx, w, r - topEx)
+
+            // Lateral derecho recto
+            lineTo(w, h - r + botEx)
+            // Esquina inferior derecha
+            cubicTo(w, h - r + r * k + botEx, w - r + r * k, h + botEx, w - r, h + botEx)
+
+            // Línea inferior
+            lineTo(r, h + botEx)
+            // Esquina inferior izquierda
+            cubicTo(r - r * k, h + botEx, 0f, h - r + r * k + botEx, 0f, h - r + botEx)
+
+            // Lateral izquierdo recto
+            lineTo(0f, r - topEx)
+            // Esquina superior izquierda
+            cubicTo(0f, r - r * k - topEx, r - r * k, -topEx, r, -topEx)
+            close()
+        }
+        return Outline.Generic(path)
+    }
+}
+
+/**
+ * SquircleShape: Superelipse estándar.
+ */
 class SquircleShape(private val cornerRadius: Dp) : Shape {
     override fun createOutline(
         size: Size,
@@ -56,69 +119,71 @@ class SquircleShape(private val cornerRadius: Dp) : Shape {
     }
 }
 
+// --- INSTANCIAS ---
+val GridHeaderShape = VerticalSquircleShape(cornerRadius = 12.dp, extraHeightTop = 15.dp)
+val GridFooterShape = VerticalSquircleShape(cornerRadius = 12.dp, extraHeightBottom = 15.dp)
 val SquircleCellShape = SquircleShape(12.dp)
 val SquircleHeaderShape = SquircleShape(14.dp)
 val CalendarCellShape = SquircleShape(14.dp)
+val SquircleMiniShape = SquircleShape(4.dp)
 
-val SquircleMiniShape = SquircleShape(7.dp)
+// --- PREVIEW ---
 
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
-@androidx.compose.runtime.Composable
+@Composable
 fun SquircleShapesPreview() {
-    androidx.compose.material3.MaterialTheme {
-        androidx.compose.foundation.layout.Column(
-            modifier = androidx.compose.ui.Modifier.padding(16.dp),
-            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)
+    MaterialTheme {
+        Column(
+            modifier = Modifier
+                .padding(30.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(32.dp)
         ) {
-            // Comparativa de los shapes definidos
-            ShapeShowcase("Mini Shape (4dp) - Ideal Heatmap", 16.dp, SquircleMiniShape)
-            ShapeShowcase("Cell Shape (12dp)", 44.dp, SquircleCellShape)
-            ShapeShowcase("Header Shape (14dp)", 56.dp, SquircleHeaderShape)
+            Text("Vertical Squircle Shapes", fontWeight = FontWeight.Bold)
 
-            androidx.compose.material3.HorizontalDivider(modifier = androidx.compose.ui.Modifier.padding(vertical = 8.dp))
-
-            // Ejemplo de cómo se vería la leyenda de GitHub con el MiniShape
-            androidx.compose.material3.Text(
-                "Ejemplo Leyenda GitHub (MiniShape)",
-                style = androidx.compose.material3.MaterialTheme.typography.labelMedium
+            // Preview del Vertical Squircle puro (estilo cápsula Squircle)
+            ShapeShowcase(
+                label = "Vertical Squircle Puro (Cápsula)",
+                width = 24.dp,
+                height = 30.dp,
+                shape = VerticalSquircleShape(10.dp)
             )
-            androidx.compose.foundation.layout.Row(
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp)
-            ) {
-                repeat(7) { i ->
-                    androidx.compose.foundation.layout.Box(
-                        modifier = androidx.compose.ui.Modifier
-                            .size(16.dp)
-                            .clip(SquircleMiniShape) // Corregido: sin prefijo largo
-                            .background(androidx.compose.ui.graphics.Color(0xFF216E39).copy(alpha = (i + 1) / 7f))
-                    )
-                }
-            }
+
+            // Preview del desborde para el Grid
+            ShapeShowcase(
+                label = "Grid Header (Desborde superior)",
+                width = 48.dp,
+                height = 48.dp,
+                shape = GridHeaderShape
+            )
+
+            HorizontalDivider()
+
+            Text("Shapes Cuadrados", fontWeight = FontWeight.Bold)
+
+            ShapeShowcase("Squircle Estándar", 44.dp, 44.dp, SquircleCellShape)
+            ShapeShowcase("Mini Heatmap (4dp)", 16.dp, 16.dp, SquircleMiniShape)
         }
     }
 }
 
-// Función auxiliar necesaria para que la preview funcione
-@androidx.compose.runtime.Composable
+@Composable
 private fun ShapeShowcase(
     label: String,
-    size: androidx.compose.ui.unit.Dp,
-    shape: androidx.compose.ui.graphics.Shape
+    width: Dp,
+    height: Dp,
+    shape: Shape
 ) {
-    androidx.compose.foundation.layout.Row(
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        androidx.compose.foundation.layout.Box(
-            modifier = androidx.compose.ui.Modifier
-                .size(size)
-                .clip(shape) // Corregido: sin prefijo largo
-                .background(androidx.compose.ui.graphics.Color.Black)
+        Box(
+            modifier = Modifier
+                .size(width = width, height = height)
+                .clip(shape)
+                .background(Color.Black)
         )
-        androidx.compose.material3.Text(
-            text = label,
-            style = androidx.compose.material3.MaterialTheme.typography.bodySmall
-        )
+        Text(text = label, style = MaterialTheme.typography.bodySmall)
     }
 }
-
