@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
 import com.schednd.domain.model.AttendanceTier
 import com.schednd.domain.model.computeAttendanceTier
@@ -126,18 +127,11 @@ private val GlowGreensDark = listOf(
     Color(0xFF7CF08D)
 )
 
-private val GlowGreensLight = listOf(
-    Color(0xFF001FFF),
-    Color(0xFFCA2CF6),
-    Color(0xFFA62626),
-    Color(0xFFDEC200),
-    Color(0xFF00D00A),
-    Color(0xFF000000)
-)
+// Color del anillo pulsante en modo claro (borde sólido, no glow).
+private val LightPulseRingColor = Color(0xFF2196F3)
 
-@Composable
 private fun getGlowColor(count: Int, total: Int): Color {
-    val palette = if (isSystemInDarkTheme()) GlowGreensDark else GlowGreensLight
+    val palette = GlowGreensDark
     if (total <= 0 || count == 0) return palette[0]
     val ratio = count.toFloat() / total
     val index = (ratio * (palette.size - 1)).toInt().coerceIn(0, palette.size - 1)
@@ -226,7 +220,7 @@ fun AvailabilityGrid(
                 Text(
                     text = participant.name,
                     modifier = Modifier.width(nameWidth).padding(end = 4.dp),
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 16.sp),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -255,25 +249,45 @@ fun AvailabilityGrid(
                         contentAlignment = Alignment.Center
                     ) {
                         if (shouldPulse) {
-                            val glowColor = getGlowColor(count, total)
-                            Box(
-                                modifier = Modifier
-                                    .matchParentSize()
-                                    .graphicsLayer {
-                                        scaleX = pulseScale * 1.6f
-                                        scaleY = pulseScale * 1.6f
-                                    }
-                                    .background(
-                                        brush = Brush.radialGradient(
-                                            colors = listOf(
-                                                glowColor.copy(alpha = 0.75f),
-                                                glowColor.copy(alpha = 0.35f),
-                                                Color.Transparent
-                                            )
-                                        ),
-                                        shape = CalendarCellShape
-                                    )
-                            )
+                            if (isSystemInDarkTheme()) {
+                                val glowColor = getGlowColor(count, total)
+                                Box(
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .graphicsLayer {
+                                            scaleX = pulseScale * 1.6f
+                                            scaleY = pulseScale * 1.6f
+                                        }
+                                        .background(
+                                            brush = Brush.radialGradient(
+                                                colors = listOf(
+                                                    glowColor.copy(alpha = 0.75f),
+                                                    glowColor.copy(alpha = 0.35f),
+                                                    Color.Transparent
+                                                )
+                                            ),
+                                            shape = CalendarCellShape
+                                        )
+                                )
+                            } else {
+                                val fraction = ((pulseScale - 0.6f) / 0.35f).coerceIn(0f, 1f)
+                                val ringScale = .95f + 0.20f * fraction
+                                val borderAlpha = 1f - 0.35f * fraction
+                                val borderWidth = lerp(2.5.dp, 1.5.dp, fraction)
+                                Box(
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .graphicsLayer {
+                                            scaleX = ringScale
+                                            scaleY = ringScale
+                                        }
+                                        .border(
+                                            width = borderWidth,
+                                            color = LightPulseRingColor.copy(alpha = borderAlpha),
+                                            shape = CalendarCellShape
+                                        )
+                                )
+                            }
                         }
                         Box(
                             modifier = Modifier
@@ -291,7 +305,7 @@ fun AvailabilityGrid(
             Text(
                 text = "Total",
                 modifier = Modifier.width(nameWidth),
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold)
             )
             dates.forEach { date ->
                 val count = dateCounts[date] ?: 0
@@ -302,7 +316,7 @@ fun AvailabilityGrid(
                 ) {
                     Text(
                         text = "$count/$total",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.sp, fontWeight = FontWeight.ExtraBold),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp, fontWeight = FontWeight.ExtraBold),
                         color = if (count > 0) color else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
