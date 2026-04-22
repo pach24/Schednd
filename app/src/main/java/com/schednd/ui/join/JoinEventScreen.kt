@@ -105,7 +105,7 @@ fun JoinEventScreen(
                 AppleTextField(
                     value = uiState.code,
                     onValueChange = viewModel::onCodeChanged,
-                    label = "Codigo de la sesion",
+                    label = "Codigo de la sesión",
                     placeholder = "ABC123",
                     textStyle = MaterialTheme.typography.headlineSmall.copy(
                         fontFamily = FontFamily.Monospace

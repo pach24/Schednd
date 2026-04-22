@@ -3,7 +3,9 @@ package com.schednd.ui.detail
 import android.content.Intent
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -45,6 +48,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -54,11 +58,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.schednd.domain.model.AttendanceTier
 import com.schednd.ui.components.AvailabilityGrid
+import com.schednd.ui.components.getHeatmapColor
 import com.schednd.ui.theme.CardShape
 import com.schednd.ui.theme.FadeIn
 import com.schednd.ui.theme.FullRoundShape
 import com.schednd.ui.theme.PhaseEnterTransition
 import com.schednd.ui.theme.PhaseExitTransition
+import com.schednd.ui.theme.SquircleCellShape
+import com.schednd.ui.theme.SquircleMiniShape
 import com.schednd.ui.theme.pressScale
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -195,7 +202,7 @@ fun EventDetailScreen(
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = "Codigo de la sesion",
+                                            text = "Codigo de la sesión",
                                             style = MaterialTheme.typography.labelMedium,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -286,6 +293,58 @@ fun EventDetailScreen(
                             val recommended = uiState.dateSummaries.filter {
                                 it.tier == AttendanceTier.FULL || it.tier == AttendanceTier.VIABLE
                             }
+
+
+// LEYENDA ESTILO GITHUB ACTUALIZADA POR UX
+                            FadeIn(delayMs = 250) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.End,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // Etiqueta principal
+                                    Text(
+                                        text = "Disponibilidad:",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    Spacer(modifier = Modifier.width(8.dp))
+
+                                    // Texto "Baja"
+                                    Text(
+                                        text = "Baja",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+
+                                    Spacer(modifier = Modifier.width(4.dp))
+
+                                    // Heatmap squares
+                                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                        repeat(7) { level ->
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(16.dp) // Reducido para mayor elegancia
+                                                    .clip(SquircleMiniShape)
+                                                    .background(getHeatmapColor(level, 6))
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.width(4.dp))
+
+                                    // Texto "Alta"
+                                    Text(
+                                        text = "Alta",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
                             if (recommended.isNotEmpty()) {
                                 val dateFormat = DateTimeFormatter.ofPattern("d 'de' MMMM", Locale("es"))
                                 Spacer(modifier = Modifier.height(16.dp))

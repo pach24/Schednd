@@ -81,7 +81,7 @@ private fun tierIcon(tier: AttendanceTier): ImageVector = when (tier) {
 private val CellShape = SquircleCellShape
 private val HeaderShape = SquircleHeaderShape
 @Composable
-private fun getHeatmapColor(count: Int, total: Int): Color {
+fun getHeatmapColor(count: Int, total: Int): Color {
     val isDark = isSystemInDarkTheme()
 
     // Paleta oficial de contribuciones de GitHub
@@ -131,7 +131,7 @@ private val GlowGreensLight = listOf(
     Color(0xFFCA2CF6),
     Color(0xFFA62626),
     Color(0xFFDEC200),
-    Color(0xFF26FF00),
+    Color(0xFF00D00A),
     Color(0xFF000000)
 )
 
