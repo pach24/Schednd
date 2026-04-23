@@ -77,6 +77,9 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.play.services)
 
+    // Haze (frosted glass)
+    implementation(libs.haze)
+
     // Core
     implementation(libs.coil.compose)
     implementation(libs.androidx.core.ktx)

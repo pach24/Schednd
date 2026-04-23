@@ -24,7 +24,19 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -81,35 +93,16 @@ fun EventDetailScreen(
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     var showDeleteDialog by remember { mutableStateOf(false) }
+    val hazeState = remember { HazeState() }
 
     LaunchedEffect(uiState.isDeleted) {
         if (uiState.isDeleted) onBack()
     }
 
-    // Animated delete dialog
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Borrar sesion") },
-            text = { Text("Seguro que quieres borrar esta sesion? Esta accion no se puede deshacer.") },
-            shape = CardShape,
-            confirmButton = {
-                TextButton(onClick = {
-                    showDeleteDialog = false
-                    viewModel.deleteEvent()
-                }) {
-                    Text("Borrar", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }
+    Box(modifier = Modifier.fillMaxSize()) {
 
     Scaffold(
+        modifier = Modifier.hazeSource(state = hazeState),
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
@@ -432,6 +425,96 @@ fun EventDetailScreen(
                         Spacer(modifier = Modifier.height(24.dp))
                     }
                 }
+            }
+        }
+    }
+
+    if (showDeleteDialog) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.25f))
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ) { showDeleteDialog = false },
+            contentAlignment = Alignment.Center
+        ) {
+            DeleteSessionDialog(
+                hazeState = hazeState,
+                onConfirm = {
+                    showDeleteDialog = false
+                    viewModel.deleteEvent()
+                }
+            )
+        }
+    }
+
+    } // Box
+}
+
+@Composable
+private fun DeleteSessionDialog(
+    hazeState: HazeState,
+    onConfirm: () -> Unit
+) {
+    val isDark = isSystemInDarkTheme()
+    val dialogShape = RoundedCornerShape(28.dp)
+
+    val tintColor = if (isDark)
+        Color(0xFF1C1C1E).copy(alpha = 0.82f)
+    else
+        Color.White.copy(alpha = 0.82f)
+
+    val borderBrush = if (isDark) {
+        Brush.verticalGradient(
+            listOf(Color.White.copy(alpha = 0.25f), Color.Transparent)
+        )
+    } else {
+        Brush.verticalGradient(
+            listOf(Color.White, Color.Transparent)
+        )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth(0.85f)
+            .wrapContentHeight()
+            .clip(dialogShape)
+            .hazeEffect(state = hazeState) {
+                blurRadius = 20.dp
+                backgroundColor = if (isDark) Color(0xFF1C1C1E) else Color.White
+                tints = listOf(HazeTint(tintColor))
+            }
+            .border(1.dp, borderBrush, dialogShape)
+    ) {
+        Column(modifier = Modifier.padding(24.dp)) {
+            Text(
+                text = "Borrar sesion",
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = "Seguro que quieres borrar esta sesion? Esta accion no se puede deshacer.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = onConfirm,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(50),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f),
+                    contentColor = MaterialTheme.colorScheme.error
+                ),
+                elevation = ButtonDefaults.buttonElevation(
+                    defaultElevation = 0.dp,
+                    pressedElevation = 0.dp
+                )
+            ) {
+                Text("Borrar sesion", fontWeight = FontWeight.SemiBold)
             }
         }
     }
