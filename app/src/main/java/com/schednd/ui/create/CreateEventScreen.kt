@@ -139,7 +139,7 @@ fun CreateEventScreen(
                             value = uiState.creatorName,
                             onValueChange = viewModel::onCreatorNameChanged,
                             label = "Tu nombre",
-                            placeholder = "Ej: Gandalf",
+                            placeholder = "Ej: Pizpireto",
                             modifier = Modifier.fillMaxWidth()
                         )
                     }

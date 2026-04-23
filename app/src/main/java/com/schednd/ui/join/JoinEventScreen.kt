@@ -55,10 +55,15 @@ import com.schednd.ui.theme.pressScale
 fun JoinEventScreen(
     onJoined: (String) -> Unit,
     onBack: () -> Unit,
+    prefilledCode: String = "",
     viewModel: JoinEventViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(prefilledCode) {
+        if (prefilledCode.isNotEmpty()) viewModel.onCodeChanged(prefilledCode)
+    }
 
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
@@ -121,7 +126,7 @@ fun JoinEventScreen(
                     value = uiState.participantName,
                     onValueChange = viewModel::onNameChanged,
                     label = "Tu nombre",
-                    placeholder = "Ej: Gandalf",
+                    placeholder = "Ej: Pizpireto",
                     modifier = Modifier.fillMaxWidth()
                 )
             }

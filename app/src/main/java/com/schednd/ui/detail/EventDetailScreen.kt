@@ -233,7 +233,7 @@ fun EventDetailScreen(
                                             action = Intent.ACTION_SEND
                                             putExtra(
                                                 Intent.EXTRA_TEXT,
-                                                "Unete a mi sesion de D&D en Schednd con el codigo: $code"
+                                                "¡Únete a mi sesión de D&D en Schednd!\n\nEntra directamente aquí y solo pon tu nombre:\nschednd://join?code=$code\n\nO usa el código: $code"
                                             )
                                             type = "text/plain"
                                         }
@@ -410,7 +410,7 @@ fun EventDetailScreen(
                                     action = Intent.ACTION_SEND
                                     putExtra(
                                         Intent.EXTRA_TEXT,
-                                        "Unete a mi sesion de D&D en Schednd con el codigo: $code"
+                                        "¡Únete a mi sesión de D&D en Schednd!\n\nEntra directamente aquí y solo pon tu nombre:\nschednd://join?code=$code\n\nO usa el código: $code"
                                     )
                                     type = "text/plain"
                                 }

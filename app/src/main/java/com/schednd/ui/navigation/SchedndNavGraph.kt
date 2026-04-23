@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.schednd.ui.create.CreateEventScreen
 import com.schednd.ui.detail.EditAvailabilityScreen
 import com.schednd.ui.detail.EventDetailScreen
@@ -47,8 +48,17 @@ fun SchedndNavGraph(navController: NavHostController) {
                 onBack = { navController.popBackStack() }
             )
         }
-        composable("join") {
+        composable(
+            route = "join?code={code}",
+            arguments = listOf(navArgument("code") {
+                type = NavType.StringType
+                defaultValue = ""
+            }),
+            deepLinks = listOf(navDeepLink { uriPattern = "schednd://join?code={code}" })
+        ) { backStackEntry ->
+            val prefilledCode = backStackEntry.arguments?.getString("code").orEmpty()
             JoinEventScreen(
+                prefilledCode = prefilledCode,
                 onJoined = { code ->
                     navController.navigate("event/$code") {
                         popUpTo("home")
