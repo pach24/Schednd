@@ -2,6 +2,14 @@ package com.schednd.ui.detail
 
 import android.content.Intent
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -429,7 +437,12 @@ fun EventDetailScreen(
         }
     }
 
-    if (showDeleteDialog) {
+    AnimatedVisibility(
+        visible = showDeleteDialog,
+        enter = fadeIn(tween(220)),
+        exit  = fadeOut(tween(200))
+    ) {
+        val animScope = this
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -440,13 +453,31 @@ fun EventDetailScreen(
                 ) { showDeleteDialog = false },
             contentAlignment = Alignment.Center
         ) {
-            DeleteSessionDialog(
-                hazeState = hazeState,
-                onConfirm = {
-                    showDeleteDialog = false
-                    viewModel.deleteEvent()
+            with(animScope) {
+                Box(
+                    modifier = Modifier.animateEnterExit(
+                        enter = scaleIn(
+                            initialScale = 0.86f,
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness    = Spring.StiffnessMediumLow
+                            )
+                        ) + fadeIn(tween(180)),
+                        exit = scaleOut(
+                            targetScale   = 0.92f,
+                            animationSpec = tween(160)
+                        ) + fadeOut(tween(160))
+                    )
+                ) {
+                    DeleteSessionDialog(
+                        hazeState = hazeState,
+                        onConfirm = {
+                            showDeleteDialog = false
+                            viewModel.deleteEvent()
+                        }
+                    )
                 }
-            )
+            }
         }
     }
 
