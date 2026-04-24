@@ -30,6 +30,7 @@ data class EventDetailUiState(
     val datesAsLocal: List<LocalDate> = emptyList(),
     val participantAvailability: Map<String, Set<LocalDate>> = emptyMap(),
     val dateSummaries: List<DateSummary> = emptyList(),
+    val confirmedDate: LocalDate? = null,
     val isCreator: Boolean = false,
     val isDeleted: Boolean = false,
     val isLoading: Boolean = true,
@@ -74,6 +75,7 @@ class EventDetailViewModel @Inject constructor(
                                 .sorted()
                             val dateSummaries = computeDateSummaries(datesLocal, participants, availability)
 
+                            val confirmedDate = event.confirmedDate?.toLocalDate()
                             val isCreator = event.creatorId == authRepository.getCurrentUserId()
                             val myParticipant = participants.find { it.userId == myUserId }
                             val mySavedDates = myParticipant?.availableDates
@@ -86,6 +88,7 @@ class EventDetailViewModel @Inject constructor(
                                     datesAsLocal = datesLocal,
                                     participantAvailability = availability,
                                     dateSummaries = dateSummaries,
+                                    confirmedDate = confirmedDate,
                                     isCreator = isCreator,
                                     isLoading = false,
                                     mySavedDates = mySavedDates,
@@ -136,6 +139,20 @@ class EventDetailViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.update { it.copy(isSavingAvailability = false, error = e.message) }
             }
+        }
+    }
+
+    fun confirmDate(date: LocalDate) {
+        viewModelScope.launch {
+            try { eventRepository.confirmDate(code, date) }
+            catch (e: Exception) { _uiState.update { it.copy(error = e.message) } }
+        }
+    }
+
+    fun clearConfirmedDate() {
+        viewModelScope.launch {
+            try { eventRepository.clearConfirmedDate(code) }
+            catch (e: Exception) { _uiState.update { it.copy(error = e.message) } }
         }
     }
 

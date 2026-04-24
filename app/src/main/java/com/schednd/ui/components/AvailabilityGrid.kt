@@ -38,7 +38,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -85,7 +84,8 @@ fun AvailabilityGrid(
     dates: List<LocalDate>,
     participants: List<Participant>,
     participantAvailability: Map<String, Set<LocalDate>>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showBestStripe: Boolean = false
 ) {
     val total = participants.size
     val dayNameFormatter = DateTimeFormatter.ofPattern("EEE", Locale("es"))
@@ -152,7 +152,7 @@ fun AvailabilityGrid(
                     modifier = Modifier.size(width = cellSize, height = cellSize + 12.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (isBest) {
+                    if (isBest && showBestStripe) {
                         // FRANJA: Expansión hacia arriba y hacia los lados
                         Box(
                             modifier = Modifier
@@ -245,6 +245,7 @@ fun AvailabilityGrid(
                         .width(nameWidth)
                         .padding(end = 6.dp),
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium),
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -256,7 +257,7 @@ fun AvailabilityGrid(
                         modifier = Modifier.size(cellSize),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (isBest) {
+                        if (isBest && showBestStripe) {
                             // FRANJA: Cuerpo central recto, solo expansión lateral
                             Box(
                                 modifier = Modifier
@@ -294,62 +295,6 @@ fun AvailabilityGrid(
             }
         }
 
-        // --- SUMMARY ROW ---
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = "Total",
-                modifier = Modifier.width(nameWidth),
-                style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            )
-            dates.forEach { date ->
-                val count = dateCounts[date] ?: 0
-                val isBest = date in bestDates
-                Box(
-                    modifier = Modifier.size(cellSize),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (isBest) {
-                        // FRANJA: Parte inferior. Expansión lateral, pero NO hacia abajo (expY = 0)
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .layout { measurable, constraints ->
-                                    val expX = expansionDp.roundToPx()
-                                    val targetWidth = constraints.maxWidth + (expX * 2)
-                                    val placeable = measurable.measure(
-                                        constraints.copy(
-                                            minWidth = targetWidth,
-                                            maxWidth = targetWidth,
-                                            minHeight = constraints.maxHeight, // Altura exacta de la celda
-                                            maxHeight = constraints.maxHeight
-                                        )
-                                    )
-                                    layout(constraints.maxWidth, constraints.maxHeight) {
-                                        placeable.place(-expX, 0)
-                                    }
-                                }
-                                .background(
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = bestAlpha),
-                                    shape = RoundedCornerShape(
-                                        bottomStart = 16.dp,
-                                        bottomEnd = 16.dp
-                                    )
-                                )
-                        )
-                    }
-                    Text(
-                        text = "$count/$total",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.ExtraBold),
-                        color = if (count > 0) {
-                            if (isSystemInDarkTheme()) Color.White else Color.Black
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        }
     }
 }
 

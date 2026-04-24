@@ -6,5 +6,6 @@ data class Event(
     val code: String = "",
     val name: String = "",
     val creatorId: String = "",
-    val createdAt: Timestamp = Timestamp.now()
+    val createdAt: Timestamp = Timestamp.now(),
+    val confirmedDate: Timestamp? = null
 )

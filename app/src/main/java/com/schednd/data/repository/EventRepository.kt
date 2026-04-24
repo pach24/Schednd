@@ -118,12 +118,25 @@ class EventRepository @Inject constructor(
         return Timestamp(Date.from(instant))
     }
 
+    suspend fun confirmDate(code: String, date: LocalDate) {
+        eventsCollection.document(code)
+            .update("confirmedDate", date.toTimestamp())
+            .await()
+    }
+
+    suspend fun clearConfirmedDate(code: String) {
+        eventsCollection.document(code)
+            .update("confirmedDate", null)
+            .await()
+    }
+
     private fun com.google.firebase.firestore.DocumentSnapshot.toEvent(code: String): Event {
         return Event(
             code = code,
             name = getString("name") ?: "",
             creatorId = getString("creatorId") ?: "",
-            createdAt = getTimestamp("createdAt") ?: Timestamp.now()
+            createdAt = getTimestamp("createdAt") ?: Timestamp.now(),
+            confirmedDate = getTimestamp("confirmedDate")
         )
     }
 }

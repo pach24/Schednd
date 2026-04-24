@@ -30,8 +30,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -54,7 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.schednd.R
-import com.schednd.ui.theme.CardShape
+import com.schednd.ui.components.AppleCard
 import com.schednd.ui.theme.FadeIn
 import com.schednd.ui.theme.FullRoundShape
 import com.schednd.ui.theme.PhaseEnterTransition
@@ -215,7 +213,7 @@ fun HomeScreen(
                                 }
 
                                 val cardInteraction = remember { MutableInteractionSource() }
-                                Card(
+                                AppleCard(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 4.dp)
@@ -227,12 +225,7 @@ fun HomeScreen(
                                         .clickable(
                                             interactionSource = cardInteraction,
                                             indication = null
-                                        ) { onOpenEvent(event.code) },
-                                    shape = CardShape,
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surface
-                                    )
+                                        ) { onOpenEvent(event.code) }
                                 ) {
                                     Row(
                                         modifier = Modifier
@@ -245,7 +238,8 @@ fun HomeScreen(
                                             Text(
                                                 text = event.name,
                                                 style = MaterialTheme.typography.bodyLarge,
-                                                fontWeight = FontWeight.Medium
+                                                fontWeight = FontWeight.Medium,
+                                                color = MaterialTheme.colorScheme.onSurface
                                             )
                                             Text(
                                                 text = event.code,
