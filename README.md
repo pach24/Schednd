@@ -13,7 +13,7 @@
 
 ## ✨ Overview
 
-**S&D — Schedule and Dice** is an Android application built for tabletop RPG groups (such as Dungeons & Dragons) to simplify session planning.
+**S&R — Schedule and Role** is an Android application built for tabletop RPG groups (such as Dungeons & Dragons) to simplify session planning.
 
 Instead of endless group chats and polls, participants submit their availability, and S&D automatically highlights the best dates based on group attendance.
 
@@ -70,4 +70,3 @@ Each date is automatically categorized based on attendance:
 
 ---
 
-## 📁 Project Structure
