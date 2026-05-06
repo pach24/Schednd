@@ -1,4 +1,4 @@
-# 🎲 S&D — Schedule and Dice
+# 🎲 S&R — Schedule and Role
 
 <p align="center">
   <img src= "https://github.com/user-attachments/assets/3b2e68e8-c741-4dfd-9485-27186a50398c" alt="S&D Hero Banner" width="80%" />
