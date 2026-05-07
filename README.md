@@ -13,60 +13,61 @@
 
 ## ✨ Overview
 
-**S&R — Schedule and Role** is an Android application built for tabletop RPG groups (such as Dungeons & Dragons) to simplify session planning.
+**S&R — Schedule and Role**is a modern Android application designed to solve the "scheduling boss fight" for tabletop RPG groups. It allows players to sync their availability in real-time, providing group leaders with data-driven insights to pick the perfect session date.
 
-Instead of endless group chats and polls, participants submit their availability, and S&D automatically highlights the best dates based on group attendance.
+Instead of endless group chats and polls, participants submit their availability, and S&R automatically highlights the best dates based on group attendance.
 
----
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.9+-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+[![Compose](https://img.shields.io/badge/Jetpack_Compose-Material_3-4285F4?logo=android&logoColor=white)](https://developer.android.com/jetpack/compose)
+[![Firebase](https://img.shields.io/badge/Firebase-Auth_|_Firestore_|_Cloud_Messaging-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com/)
 
-## 🚀 Features
-
-### 📅 Event Management
-- Create events with a unique 6-character code  
-- Join events instantly using a shared code  
-- Delete events (creator only)  
-
-### 👥 Availability Coordination
-- Submit and update your available dates anytime  
-- Real-time shared availability grid  
-- Live updates across all participants  
-
-### 📊 Smart Recommendations
-
-Each date is automatically categorized based on attendance:
-
-| Tier | Threshold | Indicator |
-|------|----------|----------|
-| Full | ≥ 86% | 🟢 Excellent |
-| Viable | ≥ 71% | 🟡 Good |
-| Limited | ≥ 57% | 🟠 Possible |
-| Insufficient | < 57% | 🔴 Unlikely |
-
-- Recommended dates ranked by participation  
-- Clear visibility of who cannot attend  
-
-### 🔔 Notifications & Convenience
-- Push notifications when availability changes  
-- Recent events history for quick access  
-- Easy code sharing via system share sheet  
+ 
 
 ---
 
-## 🧱 Tech Stack
+## 🚀 Key Features
 
-| Layer | Technology |
-|------|-----------|
-| Language | Kotlin |
-| UI | Jetpack Compose (Material 3) |
-| Architecture | MVVM + Repository Pattern |
-| Dependency Injection | Hilt |
-| Backend | Firebase Cloud Firestore |
-| Authentication | Firebase Anonymous Auth |
-| Notifications | Firebase Cloud Messaging |
-| Local Storage | SharedPreferences |
-| Build System | Gradle (Version Catalog) |
-| Min SDK | 29 |
-| Target SDK | 35 |
+* **Real-time Synchronization:** Instant updates across all participants using Firebase Cloud Firestore.
+* **Smart Attendance Tiers:** Algorithms that automatically categorize dates (Full, Viable, Limited, or Insufficient) based on group participation percentages.
+* **Deep Linking:** Join events instantly via shared links or unique 6-character codes.
+* **Push Notifications:** Built-in messaging service to notify users when group availability changes via Firebase Cloud Messaging.
+* **Privacy-First:** Secure anonymous authentication, allowing users to participate without tedious sign-up flows.
 
+---
+
+## 🛠 Technical Stack & Architecture
+
+This project was built following **Clean Architecture** principles and **SOLID** design patterns to ensure scalability and testability.
+
+* **UI Layer:** 100% Jetpack Compose with Material 3. Implements advanced UI components like Custom Calendars and Availability Grids.
+* **Architecture:** MVVM (Model-View-ViewModel) + Repository Pattern.
+* **Dependency Injection:** Hilt (Dagger) for managing scoped dependencies and improving modularity.
+* **Asynchronous Programming:** Kotlin Coroutines and Flow for handling reactive data streams from Firestore.
+* **Backend Services:**
+    * **Cloud Firestore:** Real-time NoSQL database.
+    * **Firebase Auth:** For seamless anonymous user sessions.
+    * **Cloud Messaging (FCM):** Topic-based push notifications for event updates.
+* **Dependency Management:** Gradle Version Catalogs for a unified and clean build configuration.
+
+---
+
+## 📁 Project Highlights
+
+* **Domain Logic:** Centrally managed Use Cases (e.g., `ComputeDateSummariesUseCase`) that handle complex availability calculations independently of the UI.
+* **Modern Navigation:** Uses the Compose Navigation component with a centralized and type-safe approach.
+* **Custom Theming:** A fully implemented Material 3 theme with support for dynamic colors and specialized RPG-style typography.
+* **Efficient Data Access:** Robust Repository pattern implementation that abstracts Firebase complexity from the business logic.
+
+---
+
+## ⚙️ Requirements & Setup
+
+* **Min SDK:** 29
+* **Target SDK:** 35
+* **Java Version:** 11+
+
+1. Clone the repository.
+2. Add your `google-services.json` to the `app/` directory.
+3. Build the project using the included Gradle wrapper: `./gradlew assembleDebug`.
 ---
 
